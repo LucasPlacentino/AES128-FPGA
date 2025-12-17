@@ -15,12 +15,25 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity aes_enc is
---  Port ( );
+    port (
+        clock: in std_logic;
+        reset: in std_logic;
+        start: in std_logic;
+        v_i: in std_logic_vector(127 downto 0);
+        v_o: out std_logic_vector(127 downto 0);
+        done: out std_logic
+    );
 end aes_enc;
 
 architecture Behavioral of aes_enc is
 
 begin
+
+
+    -- input is v_i
+    -- execute each of the 4 steps of AES in sequence
+    -- when done, set done signal high
+    -- output the encrypted vector to v_o
 
 
 end Behavioral;
