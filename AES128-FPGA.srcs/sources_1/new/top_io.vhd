@@ -32,6 +32,7 @@ entity top_io is
         clk: in std_logic;
         btnC: in std_logic; -- start
         btnR: in std_logic; -- reset
+        -- btnD: in std_logic; -- if we want to implement decryption, let's run it using DOWN button
         seg: out std_logic_vector(6 downto 0); -- 7 segments, shared among all 4 digits
         an: out std_logic_vector(3 downto 0); -- 4 anodes, 1 per digit
         led(0): out std_logic -- only for debug like enc done
@@ -40,14 +41,25 @@ end top_io;
 
 architecture Behavioral of top_io is
 
-    signal strt_ff1: std_logic := '0'; -- first flip-flop for debouncing
-    signal strt_ff2: std_logic := '0'; -- second flip-flop for debouncing
+    type state_t is (IDLE, RUNNING, DONE);
+    signal state, next_state: state_t := IDLE;
+    signal start_encryption: std_logic := '0';
+    signal reset_encryption: std_logic := '0';
+
+    signal strt_ff1, strt_ff2: std_logic := '0'; -- flip-flops for synchronizing
     signal strt: std_logic; -- pulse when btnC is pressed (start encryption)
-    signal rst_ff1: std_logic := '0'; -- first flip-flop for debouncing
-    signal rst_ff2: std_logic := '0'; -- second flip-flop for debouncing
+
+    signal rst_ff1, rst_ff2: std_logic := '0'; -- flip-flops for synchronizing
     signal rst: std_logic; -- pulse when btnR is pressed (reset encryption)
+
+    --constant DEBOUNCE_CYCLES: integer := 1_000_000; -- tune for debouncing time
+    --signal strt_prev: std_logic := '0'; -- previous value of start signal (for debouncing)
+    --signal db_count_strt: unsigned(19 downto 0) := (others => '0'); -- counter for debouncing start button
+    --signal rst_prev: std_logic := '0'; -- previous value of reset signal (for debouncing)
+    --signal db_count_rst: unsigned(19 downto 0) := (others => '0'); -- counter for debouncing reset button
+
     signal done: std_logic := '0'; -- is 1 when encryption is done
-    signal v_o: std_logic_vector(127 downto 0); -- output vector
+    signal v_o: std_logic_vector(127 downto 0); -- OUTPUT VECTOR
 
     -- TEST VECTOR, CHANGE HERE:
     constant test_vector: std_logic_vector(127 downto 0) := x"00112233445566778899aabbccddeeff"; -- INPUT VECTOR
@@ -61,7 +73,9 @@ architecture Behavioral of top_io is
     signal selected_digit: unsigned(1 downto 0) := "00"; -- to select which digit to display
     constant clock_divider_display: integer := 50000; -- adjust for display refresh rate
     signal display_div_count: unsigned(15 downto 0) := (others => '0'); -- counter for display clock division
-    signal display_tick: std_logic := '0'; -- tick for display multiplexing
+    signal display_tick: std_logic := '0'; -- tick for 7seg display multiplexing
+
+    led(0) <= done; -- light up led0 according to done flag/signal
 
     component aes_enc
         port (
@@ -75,33 +89,104 @@ architecture Behavioral of top_io is
     end component;
 
 begin
-
     --do button debouncing ?
 
-    --FSM ?
+    -- states: IDLE, ENCRYPTING/RUNNING, DONE
+    main_fsm: process(clk)
+    begin
+        if rising_edge(clk) then
+
+            -- BTN synchronization:
+            rst_ff1 <= btnR;
+            rst_ff2 <= rst_ff1;
+
+            -- temporary? no debouncing
+            rst <= rst_ff2;
+
+            strt_ff1 <= btnC;
+            strt_ff2 <= strt_ff1;
+
+            -- temporary? no debouncing
+            strt <= strt_ff2;
+
+            -- FSM:
+            --if rst = '1' then
+            --    state <= IDLE;
+            --else
+                case state is
+                    when IDLE =>
+                        reset_encryption <= '0';
+                        if strt = '1' then
+                            state <= RUNNING;
+                            start_encryption <= '1'; --must
+                        else
+                            state <= IDLE;
+                            start_encryption <= '0'; --dh
+                        end if;
+                    when RUNNING =>
+                        reset_encryption <= '0';
+                        if done = '1' then
+                            state <= DONE;
+                            start_encryption <= '0'; --must
+                        else
+                            state <= RUNNING;
+                            --already start_encryption <= '1';
+                        end if;
+                    when DONE =>
+                        if rst = '1' then
+                            state <= IDLE;
+                            start_encryption <= '0'; --dh
+                            reset_encryption <= '1'; --must
+                        else
+                            state <= DONE;
+                            start_encryption <= '0'; --dh
+                            reset_encryption <= '0';
+                        end if;
+                end case;
+            --end if;
+        end if;
+    end process main_fsm;
 
     encryption_aes: aes_enc
         port map (
             clock => clk, -- main clock
-            reset => rst, -- reset signal from btnR
-            start => strt, -- start signal from btnC
+            reset => reset_encryption, -- reset signal from FSM
+            start => start_encryption, -- start signal from FSM
             v_i => test_vector, -- input vector
             v_o => v_o, -- output vector
             done => done -- done flag
         );
 
-    led(0) <= done; -- light up led0 according to done flag/signal
+    -- btn_sync: process(clk)
+    -- begin -- synchronize button presses (protects against metastability), enters clock domain
+    --     if rising_edge(clk) then
+    --         strt_ff1 <= btnC;
+    --         strt_ff2 <= strt_ff1;
 
-    btn_sync: process(clk)
-    begin -- synchronize button presses (protects against metastability), enters clock domain
-        if rising_edge(clk) then
-            strt_ff1 <= btnC;
-            strt_ff2 <= strt_ff1;
+    --         rst_ff1 <= btnR;
+    --         rst_ff2 <= rst_ff1;
+    --     end if;
+    -- end process btn_sync;
 
-            rst_ff1 <= btnR;
-            rst_ff2 <= rst_ff1;
-        end if;
-    end process btn_sync;
+    -- btn_debounce: process(clk)
+    -- begin
+    --     if rising_edge(clk) then
+    --         -- TODO: debounce buttons ?
+    --         if strt_ff2 = '1' then
+    --             if db_count_strt 
+
+
+
+    --         end if;
+
+    --         if rst_ff2 = '1' then
+    --             if db_count_rst 
+
+
+
+    --         end if;
+    --     end if;
+    -- end process btn_debounce;
 
     rst <= rst_ff2; -- TODO: sure sufficient ?
 
