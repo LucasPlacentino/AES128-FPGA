@@ -11,6 +11,17 @@
 -- 
 ----------------------------------------------------------------------------------
 
+-- wrapper for the Basys3 board
+-- center and right button
+-- 4-digit 7-segment display
+
+-- start encryption on center button press
+-- when encryption is done, show "AES" on 7-segment display
+-- when right button pressed, restart/reset
+
+-- => FSM ?
+-- aes_enc module instance
+
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
