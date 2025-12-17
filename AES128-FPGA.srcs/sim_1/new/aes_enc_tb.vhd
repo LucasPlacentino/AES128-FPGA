@@ -2,7 +2,7 @@
 -- Authors: Lucas Placentino and Mehrdad Gholamnejad
 -- 
 -- Create Date: 2025
--- Module Name: aes_enc_tb - bench
+-- Module Name: aes_enc_tb - Behavioral
 -- Project Name: AES Encryption Implementation on an FPGA
 -- Target Devices: Digilent Basys 3
 -- Description: 

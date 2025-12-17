@@ -151,10 +151,10 @@
       </Config>
     </FileSet>
     <FileSet Name="sim_1" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_1" RelGenDir="$PGENDIR/sim_1">
-      <File Path="$PSRCDIR/sources_1/new/aes_enc_tb.vhd">
+      <File Path="$PSRCDIR/sim_1/new/aes_enc_tb.vhd">
         <FileInfo>
-          <Attr Name="UsedIn" Val="simulation"/>
           <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
       <File Path="$PSRCDIR/sim_1/new/add_round_key_tb.vhd">
