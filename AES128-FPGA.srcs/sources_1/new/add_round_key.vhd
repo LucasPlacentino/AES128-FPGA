@@ -15,6 +15,8 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use work.matrix_type_pkg.ALL;
 
+-- import keys here ? no, get them as input ports, use them in aes_enc, depending on the step
+
 entity add_round_key is
     port (
         matrix_in: in byte_matrix_t; -- input to AddRoundKey
