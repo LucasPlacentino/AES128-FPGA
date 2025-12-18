@@ -27,8 +27,8 @@ architecture Behavioral of sub_byte is
     -- get S_box from provided vhd file
     component S_box is 
         port ( 
-            byte_in     : IN    std_logic_vector (7 downto 0);
-            byte_out    : OUT   std_logic_vector (7 downto 0) 
+            byte_in: in std_logic_vector (7 downto 0);
+            byte_out: out std_logic_vector (7 downto 0) 
         );
     end component;
 
