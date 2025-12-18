@@ -46,10 +46,10 @@ architecture Behavioral of top_io is
     signal start_encryption: std_logic := '0';
     signal reset_encryption: std_logic := '0';
 
-    signal strt_ff1, strt_ff2: std_logic := '0'; -- flip-flops for synchronizing
+    signal strt_ff1, strt_sync: std_logic := '0'; -- flip-flops for synchronizing
     signal strt: std_logic; -- pulse when btnC is pressed (start encryption)
 
-    signal rst_ff1, rst_ff2: std_logic := '0'; -- flip-flops for synchronizing
+    signal rst_ff1, rst_sync: std_logic := '0'; -- flip-flops for synchronizing
     signal rst: std_logic; -- pulse when btnR is pressed (reset encryption)
 
     --constant DEBOUNCE_CYCLES: integer := 1_000_000; -- tune for debouncing time
@@ -80,7 +80,7 @@ architecture Behavioral of top_io is
     component aes_enc
         port (
             clk: in std_logic;
-            rst: in std_logic;
+            reset: in std_logic;
             start: in std_logic;
             v_i: in std_logic_vector(127 downto 0);
             v_o: out std_logic_vector(127 downto 0);
@@ -99,8 +99,8 @@ begin
             -- BTN synchronization done in another process below
 
             -- temporary? no debouncing
-            rst <= rst_ff2;
-            strt <= strt_ff2;
+            rst <= rst_sync;
+            strt <= strt_sync;
 
             -- FSM:
             --if rst = '1' then
@@ -154,10 +154,10 @@ begin
     begin -- synchronize button presses (protects against metastability), enters clock domain
         if rising_edge(clk) then
             strt_ff1 <= btnC;
-            strt_ff2 <= strt_ff1;
+            strt_sync <= strt_ff1;
 
             rst_ff1 <= btnR;
-            rst_ff2 <= rst_ff1;
+            rst_sync <= rst_ff1;
         end if;
     end process btn_sync;
 
@@ -165,14 +165,14 @@ begin
     -- begin
     --     if rising_edge(clk) then
     --         -- TODO: debounce buttons ?
-    --         if strt_ff2 = '1' then
+    --         if strt_sync = '1' then
     --             if db_count_strt 
 
 
 
     --         end if;
 
-    --         if rst_ff2 = '1' then
+    --         if rst_sync = '1' then
     --             if db_count_rst 
 
 
@@ -181,7 +181,7 @@ begin
     --     end if;
     -- end process btn_debounce;
 
-    rst <= rst_ff2; -- TODO: sure sufficient ?
+    rst <= rst_sync; -- TODO: sure sufficient ?
 
     btn_clock: process(clk)
     begin
