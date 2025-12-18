@@ -33,6 +33,7 @@ entity top_io is
         btnC: in std_logic; -- start
         btnR: in std_logic; -- reset
         -- btnD: in std_logic; -- if we want to implement decryption, let's run it using DOWN button
+        btnD: in std_logic; -- button used for debug
         seg: out std_logic_vector(6 downto 0); -- 7 segments, shared among all 4 digits
         an: out std_logic_vector(3 downto 0); -- 4 anodes, 1 per digit
         led(0): out std_logic -- only for debug like enc done
@@ -51,6 +52,10 @@ architecture Behavioral of top_io is
 
     signal rst_ff1, rst_sync: std_logic := '0'; -- flip-flops for synchronizing
     signal rst: std_logic; -- pulse when btnR is pressed (reset encryption)
+
+    --debug:
+    signal dbg_ff1, dbg_sync: std_logic := '0'; -- flip-flops for synchronizing
+    signal dbg: std_logic; -- pulse when btnD (debug button)
 
     --constant DEBOUNCE_CYCLES: integer := 1_000_000; -- tune for debouncing time
     --signal strt_prev: std_logic := '0'; -- previous value of start signal (for debouncing)
@@ -102,40 +107,44 @@ begin
             rst <= rst_sync;
             strt <= strt_sync;
 
+            --DEBUG: COMMENT OUT AFTER
+            dbg <= dbg_sync; -- debug signal from btnD
+            done <= dbg; -- will light up led0 and show AES on 7seg display
+
             -- FSM:
             --if rst = '1' then
             --    state <= IDLE;
             --else
-                case state is
-                    when IDLE =>
+            case state is
+                when IDLE =>
+                    reset_encryption <= '0';
+                    if strt = '1' then
+                        state <= RUNNING;
+                        start_encryption <= '1'; --must
+                    else
+                        state <= IDLE;
+                        start_encryption <= '0'; --dh
+                    end if;
+                when RUNNING =>
+                    reset_encryption <= '0';
+                    if done = '1' then
+                        state <= DONE;
+                        start_encryption <= '0'; --must
+                    else
+                        state <= RUNNING;
+                        --already start_encryption <= '1';
+                    end if;
+                when DONE =>
+                    if rst = '1' then
+                        state <= IDLE;
+                        start_encryption <= '0'; --dh
+                        reset_encryption <= '1'; --must
+                    else
+                        state <= DONE;
+                        start_encryption <= '0'; --dh
                         reset_encryption <= '0';
-                        if strt = '1' then
-                            state <= RUNNING;
-                            start_encryption <= '1'; --must
-                        else
-                            state <= IDLE;
-                            start_encryption <= '0'; --dh
-                        end if;
-                    when RUNNING =>
-                        reset_encryption <= '0';
-                        if done = '1' then
-                            state <= DONE;
-                            start_encryption <= '0'; --must
-                        else
-                            state <= RUNNING;
-                            --already start_encryption <= '1';
-                        end if;
-                    when DONE =>
-                        if rst = '1' then
-                            state <= IDLE;
-                            start_encryption <= '0'; --dh
-                            reset_encryption <= '1'; --must
-                        else
-                            state <= DONE;
-                            start_encryption <= '0'; --dh
-                            reset_encryption <= '0';
-                        end if;
-                end case;
+                    end if;
+            end case;
             --end if;
         end if;
     end process main_fsm;
@@ -158,6 +167,10 @@ begin
 
             rst_ff1 <= btnR;
             rst_sync <= rst_ff1;
+
+            --debug:
+            dbg_ff1 <= btnD;
+            dbg_sync <= dbg_ff1;
         end if;
     end process btn_sync;
 
