@@ -26,6 +26,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL; -- for unsigned types
+--use work.matrix_type_pkg.ALL; -- don't need it here for now
 
 entity top_io is
     port (

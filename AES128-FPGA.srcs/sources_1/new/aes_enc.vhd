@@ -13,8 +13,9 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use work.matrix_type_pkg.ALL;
 
---! TODO: where do we import the keys ?
+--! TODO: where do we import the keys ? here or add_round_key ?
 
 entity aes_enc is
     port (
@@ -56,6 +57,11 @@ architecture Behavioral of aes_enc is
     end component;
     -- -----------------------------------
 
+    -- Round keys:
+    constant RK_enc : rk_array_t(0 to 10) := (
+        --TODO: define the round keys here
+    );
+
 
     -- -- Signals --
     type encryption_state_t is (IDLE, PRE, PROCESSING, POST, DONE);
@@ -64,6 +70,15 @@ architecture Behavioral of aes_enc is
     signal step_state: step_state_t := SUB_BYTES; -- default state is SUB_BYTES
 
     -- TODO: other signals
+    -- TODO: matrix custom type ?
+    signal ark_i: std_logic_vector(127 downto 0); -- AddRoundKey input, will also be the very first input
+    signal ark_o: std_logic_vector(127 downto 0); -- AddRoundKey output, will also be the final output
+    signal sb_i: std_logic_vector(127 downto 0); -- SubBytes input
+    signal sb_o: std_logic_vector(127 downto 0); -- SubBytes output
+    signal sr_i: std_logic_vector(127 downto 0); -- ShiftRows input
+    signal sr_o: std_logic_vector(127 downto 0); -- ShiftRows output
+    signal mc_i: std_logic_vector(127 downto 0); -- MixColumns input
+    signal mc_o: std_logic_vector(127 downto 0); -- MixColumns output
 
 begin
 
@@ -83,6 +98,20 @@ begin
         port map (
             -- TODO: map ports
         );
+
+    -- Encryption steps are:
+    -- input plain text into:
+    -- AddRoundKey (initial)
+    -- 9 Rounds of:
+    --    SubBytes
+    --    ShiftRows
+    --    MixColumns
+    --    AddRoundKey
+    -- Final Round of:
+    --    SubBytes
+    --    ShiftRows
+    --    AddRoundKey
+    -- then output the result, cipher text (encrypted)
 
     -- --- processes: ---
     -- main FSM process

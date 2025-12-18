@@ -13,6 +13,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use work.matrix_type_pkg.ALL;
 
 entity add_round_key is
 --  Port ( );

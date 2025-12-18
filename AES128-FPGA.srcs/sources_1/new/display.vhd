@@ -93,4 +93,9 @@ begin
         end if;
     end process display_segment;
 
+
+    -- EXTRA: add a way to show the last 4 hex digits of the ciphertext on the 7-seg display ?
+    -- need a LUT to translate hex to 7-seg patterns
+    -- idea: show on btn_up press when encryption is done
+
 end Behavioral;
