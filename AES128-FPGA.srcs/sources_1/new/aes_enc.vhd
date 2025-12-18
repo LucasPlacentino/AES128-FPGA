@@ -23,7 +23,7 @@ entity aes_enc is
         start: in std_logic;
         v_i: in std_logic_vector(127 downto 0); -- input plain text
         v_o: out std_logic_vector(127 downto 0); -- output cipher text (encrypted)
-        done: out std_logic
+        aes_done: out std_logic
     ); -- TODO: do we need a ready flag ? (output)
 end aes_enc;
 

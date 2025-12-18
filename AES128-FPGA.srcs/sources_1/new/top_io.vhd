@@ -36,14 +36,16 @@ entity top_io is
         btnD: in std_logic; -- button used for debug
         seg: out std_logic_vector(6 downto 0); -- 7 segments, shared among all 4 digits
         an: out std_logic_vector(3 downto 0); -- 4 anodes, 1 per digit
-        led(0): out std_logic -- only for debug like enc done
+        --led0: out std_logic -- only for debug like enc done
+        led : out std_logic_vector(15 downto 0)
     );
 end top_io;
 
 architecture Behavioral of top_io is
 
-    type state_t is (IDLE, RUNNING, DONE);
-    signal state, next_state: state_t := IDLE;
+    type state_t is (IDLE, RUNNING, DONE_S);
+    signal state: state_t := IDLE;
+    --signal next_state: state_t := IDLE;
     signal start_encryption: std_logic := '0';
     signal reset_encryption: std_logic := '0';
 
@@ -72,15 +74,13 @@ architecture Behavioral of top_io is
     -- 7-segment patterns for letters AES (active-low)
     constant SEG_empty : std_logic_vector(6 downto 0) := "1111111"; -- all segments off
     constant SEG_A : std_logic_vector(6 downto 0) := "0001000"; -- A (a,b,c,e,f,g segments)
-    constant SEG_E : std_logic_vector(6 downto 0) := "0110000"; -- E (a,d,e,f,g segments)
-    constant SEG_S : std_logic_vector(6 downto 0) := "0100100"; -- S (a,c,d,f,g segments)
+    constant SEG_E : std_logic_vector(6 downto 0) := "0000110"; -- E (a,d,e,f,g segments)
+    constant SEG_S : std_logic_vector(6 downto 0) := "0010010"; -- S (a,c,d,f,g segments)
     
     signal selected_digit: unsigned(1 downto 0) := "00"; -- to select which digit to display
-    constant clock_divider_display: integer := 50000; -- adjust for display refresh rate
+    constant clock_divider_display: integer := 50000; -- adjust for display refresh rate, 50000: 1kHz display refresh for 100MHz board clock
     signal display_div_count: unsigned(15 downto 0) := (others => '0'); -- counter for display clock division
     signal display_tick: std_logic := '0'; -- tick for 7seg display multiplexing
-
-    led(0) <= done; -- light up led0 according to done flag/signal
 
     component aes_enc
         port (
@@ -89,14 +89,28 @@ architecture Behavioral of top_io is
             start: in std_logic;
             v_i: in std_logic_vector(127 downto 0);
             v_o: out std_logic_vector(127 downto 0);
-            done: out std_logic
+            aes_done: out std_logic
         );
     end component;
 
 begin
+
+    led(0) <= done; -- light up led0 according to done flag/signal
+    case state is
+        when IDLE =>
+            led(15) <= '1'; -- indicate idle state on led15
+        when RUNNING =>
+            led(15) <= '0'; -- indicate running state
+        when DONE_S =>
+            led(15) <= '1'; -- indicate done state
+    end case;
+
+    --DEBUG: COMMENT OUT AFTER
+    done <= dbg;
+    
     --do button debouncing ?
 
-    -- states: IDLE, ENCRYPTING/RUNNING, DONE
+    -- states: IDLE, ENCRYPTING/RUNNING, DONE_S
     main_fsm: process(clk)
     begin
         if rising_edge(clk) then
@@ -109,7 +123,7 @@ begin
 
             --DEBUG: COMMENT OUT AFTER
             dbg <= dbg_sync; -- debug signal from btnD
-            done <= dbg; -- will light up led0 and show AES on 7seg display
+            -- TODO: add a done_dbg ?
 
             -- FSM:
             --if rst = '1' then
@@ -128,19 +142,19 @@ begin
                 when RUNNING =>
                     reset_encryption <= '0';
                     if done = '1' then
-                        state <= DONE;
+                        state <= DONE_S;
                         start_encryption <= '0'; --must
                     else
                         state <= RUNNING;
                         --already start_encryption <= '1';
                     end if;
-                when DONE =>
+                when DONE_S =>
                     if rst = '1' then
                         state <= IDLE;
                         start_encryption <= '0'; --dh
                         reset_encryption <= '1'; --must
                     else
-                        state <= DONE;
+                        state <= DONE_S;
                         start_encryption <= '0'; --dh
                         reset_encryption <= '0';
                     end if;
@@ -149,15 +163,15 @@ begin
         end if;
     end process main_fsm;
 
-    encryption_aes: aes_enc
-        port map (
-            clock => clk, -- main clock
-            reset => reset_encryption, -- reset signal from FSM
-            start => start_encryption, -- start signal from FSM
-            v_i => test_vector, -- input vector
-            v_o => v_o, -- output vector
-            done => done -- done flag
-        );
+    -- encryption_aes: aes_enc
+    --     port map (
+    --         clock => clk, -- main clock
+    --         reset => reset_encryption, -- reset signal from FSM
+    --         start => start_encryption, -- start signal from FSM
+    --         v_i => test_vector, -- input vector
+    --         v_o => v_o, -- output vector
+    --         aes_done => done -- done flag
+    --     );
 
     btn_sync: process(clk)
     begin -- synchronize button presses (protects against metastability), enters clock domain
@@ -194,26 +208,25 @@ begin
     --     end if;
     -- end process btn_debounce;
 
-    rst <= rst_sync; -- TODO: sure sufficient ?
 
-    btn_clock: process(clk)
-    begin
-        if rising_edge(clk) then
-            -- start signal generation
-            if btnC = '1' then
-                strt <= '1';
-            else
-                strt <= '0';
-            end if;
+    -- btn_clock: process(clk)
+    -- begin
+    --     if rising_edge(clk) then
+    --         -- start signal generation
+    --         if btnC = '1' then
+    --             strt <= '1';
+    --         else
+    --             strt <= '0';
+    --         end if;
 
-            -- reset signal generation
-            if btnR = '1' then
-                rst <= '1';
-            else
-                rst <= '0';
-            end if;
-        end if;
-    end process btn_clock;
+    --         -- reset signal generation
+    --         if btnR = '1' then
+    --             rst <= '1';
+    --         else
+    --             rst <= '0';
+    --         end if;
+    --     end if;
+    -- end process btn_clock;
 
 
     -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- TODO: adjust divider
@@ -223,39 +236,42 @@ begin
             if display_div_count = to_unsigned(clock_divider_display-1, display_div_count'length) then
                 display_div_count <= (others => '0');
                 -- tick 1
-                display_tick <= '1';
+                -- display_tick <= '1';
+                selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
             else
                 display_div_count <= display_div_count + 1;
                 -- tick 0
-                display_tick <= '0';
+                -- display_tick <= '0';
             end if;
 
 
-            if display_tick = '1' then
-                -- if selected_digit = 3 then
-                --     selected_digit <= 0;
-                -- else
-                --     selected_digit <= selected_digit + 1;
-                -- end if;
-                selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
-            end if;
+            -- if display_tick = '1' then
+            --     -- if selected_digit = 3 then
+            --     --     selected_digit <= 0;
+            --     -- else
+            --     --     selected_digit <= selected_digit + 1;
+            --     -- end if;
+            --     selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
+            -- end if;
         end if;
     end process display_segment_clock;
 
-    display_segment: process(all)
+    --display_segment: process(all) -- process(all) is deprecated ?
+    -- equivalent to process(done, selected_digit)
+    display_segment: process(done, selected_digit)
     begin
         if done = '1' then
             -- show "AES" on 7-segment display
             case selected_digit is
                 when "00" =>
                     an <= "1110"; -- TODO: verify anode order
-                    seg <= SEG_A;
+                    seg <= SEG_S;
                 when "01" =>
                     an <= "1101";
                     seg <= SEG_E;
                 when "10" =>
                     an <= "1011";
-                    seg <= SEG_S;
+                    seg <= SEG_A;
                 when others =>
                     an <= "0111";
                     seg <= SEG_empty;
