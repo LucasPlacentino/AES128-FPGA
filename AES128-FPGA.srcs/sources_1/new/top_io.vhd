@@ -71,16 +71,25 @@ architecture Behavioral of top_io is
     -- TEST VECTOR, CHANGE HERE:
     constant test_vector: std_logic_vector(127 downto 0) := x"00112233445566778899aabbccddeeff"; -- INPUT VECTOR
 
-    -- 7-segment patterns for letters AES (active-low)
-    constant SEG_empty : std_logic_vector(6 downto 0) := "1111111"; -- all segments off
-    constant SEG_A : std_logic_vector(6 downto 0) := "0001000"; -- A (a,b,c,e,f,g segments)
-    constant SEG_E : std_logic_vector(6 downto 0) := "0000110"; -- E (a,d,e,f,g segments)
-    constant SEG_S : std_logic_vector(6 downto 0) := "0010010"; -- S (a,c,d,f,g segments)
+    -- -- 7-segment patterns for letters AES (active-low)
+    -- constant SEG_empty : std_logic_vector(6 downto 0) := "1111111"; -- all segments off
+    -- constant SEG_A : std_logic_vector(6 downto 0) := "0001000"; -- A (a,b,c,e,f,g segments)
+    -- constant SEG_E : std_logic_vector(6 downto 0) := "0000110"; -- E (a,d,e,f,g segments)
+    -- constant SEG_S : std_logic_vector(6 downto 0) := "0010010"; -- S (a,c,d,f,g segments)
     
-    signal selected_digit: unsigned(1 downto 0) := "00"; -- to select which digit to display
-    constant clock_divider_display: integer := 50000; -- adjust for display refresh rate, 50000: 1kHz display refresh for 100MHz board clock
-    signal display_div_count: unsigned(15 downto 0) := (others => '0'); -- counter for display clock division
-    signal display_tick: std_logic := '0'; -- tick for 7seg display multiplexing
+    -- signal selected_digit: unsigned(1 downto 0) := "00"; -- to select which digit to display
+    -- constant clock_divider_display: integer := 50000; -- adjust for display refresh rate, 50000: 1kHz display refresh for 100MHz board clock
+    -- signal display_div_count: unsigned(15 downto 0) := (others => '0'); -- counter for display clock division
+    -- --signal display_tick: std_logic := '0'; -- tick for 7seg display multiplexing
+
+    component display is
+        port (
+            clk: in std_logic;
+            an: out std_logic_vector(3 downto 0);
+            seg: out std_logic_vector(6 downto 0);
+            show_aes: in std_logic
+        );
+    end component;
 
     component aes_enc
         port (
@@ -95,15 +104,23 @@ architecture Behavioral of top_io is
 
 begin
 
-    led(0) <= done; -- light up led0 according to done flag/signal
-    case state is
-        when IDLE =>
-            led(15) <= '1'; -- indicate idle state on led15
-        when RUNNING =>
-            led(15) <= '0'; -- indicate running state
-        when DONE_S =>
-            led(15) <= '1'; -- indicate done state
-    end case;
+    leds_proc: process(done, state)
+    begin
+        --TODO: rest of LEDs
+        led <= (others => '0');
+        --------------------
+        
+        led(0) <= done;
+        case state is
+            when IDLE =>
+                led(15) <= '1'; -- indicate idle state on led15
+            when RUNNING =>
+                led(15) <= '0'; -- indicate running state
+            when DONE_S =>
+                led(15) <= '1'; -- indicate done state
+         end case;
+    end process;
+    --led(0) <= done; -- light up led0 according to done flag/signal
 
     --DEBUG: COMMENT OUT AFTER
     done <= dbg;
@@ -229,58 +246,66 @@ begin
     -- end process btn_clock;
 
 
-    -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- TODO: adjust divider
-    display_segment_clock: process(clk) -- display's sub_clock
-    begin
-        if rising_edge(clk) then
-            if display_div_count = to_unsigned(clock_divider_display-1, display_div_count'length) then
-                display_div_count <= (others => '0');
-                -- tick 1
-                -- display_tick <= '1';
-                selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
-            else
-                display_div_count <= display_div_count + 1;
-                -- tick 0
-                -- display_tick <= '0';
-            end if;
+    display_i : display
+        port map (
+            clk => clk,
+            an => an,
+            seg => seg,
+            show_aes => done
+        );
+
+    -- -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- TODO: adjust divider
+    -- display_segment_clock: process(clk) -- display's sub_clock
+    -- begin
+    --     if rising_edge(clk) then
+    --         if display_div_count = to_unsigned(clock_divider_display-1, display_div_count'length) then
+    --             display_div_count <= (others => '0');
+    --             -- tick 1
+    --             -- display_tick <= '1';
+    --             selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
+    --         else
+    --             display_div_count <= display_div_count + 1;
+    --             -- tick 0
+    --             -- display_tick <= '0';
+    --         end if;
 
 
-            -- if display_tick = '1' then
-            --     -- if selected_digit = 3 then
-            --     --     selected_digit <= 0;
-            --     -- else
-            --     --     selected_digit <= selected_digit + 1;
-            --     -- end if;
-            --     selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
-            -- end if;
-        end if;
-    end process display_segment_clock;
+    --         -- if display_tick = '1' then
+    --         --     -- if selected_digit = 3 then
+    --         --     --     selected_digit <= 0;
+    --         --     -- else
+    --         --     --     selected_digit <= selected_digit + 1;
+    --         --     -- end if;
+    --         --     selected_digit <= selected_digit + 1; -- wraps abck to 0 automatically
+    --         -- end if;
+    --     end if;
+    -- end process display_segment_clock;
 
-    --display_segment: process(all) -- process(all) is deprecated ?
-    -- equivalent to process(done, selected_digit)
-    display_segment: process(done, selected_digit)
-    begin
-        if done = '1' then
-            -- show "AES" on 7-segment display
-            case selected_digit is
-                when "00" =>
-                    an <= "1110"; -- TODO: verify anode order
-                    seg <= SEG_S;
-                when "01" =>
-                    an <= "1101";
-                    seg <= SEG_E;
-                when "10" =>
-                    an <= "1011";
-                    seg <= SEG_A;
-                when others =>
-                    an <= "0111";
-                    seg <= SEG_empty;
-            end case;
-        else
-            -- clear display
-            an <= "1111"; -- turn off all anodes
-            seg <= SEG_empty; -- turn off all segments
-        end if;
-    end process display_segment;
+    -- --display_segment: process(all) -- process(all) is deprecated ?
+    -- -- equivalent to process(done, selected_digit)
+    -- display_segment: process(done, selected_digit)
+    -- begin
+    --     if done = '1' then
+    --         -- show "AES" on 7-segment display
+    --         case selected_digit is
+    --             when "00" =>
+    --                 an <= "1110"; -- TODO: verify anode order
+    --                 seg <= SEG_S;
+    --             when "01" =>
+    --                 an <= "1101";
+    --                 seg <= SEG_E;
+    --             when "10" =>
+    --                 an <= "1011";
+    --                 seg <= SEG_A;
+    --             when others =>
+    --                 an <= "0111";
+    --                 seg <= SEG_empty;
+    --         end case;
+    --     else
+    --         -- clear display
+    --         an <= "1111"; -- turn off all anodes
+    --         seg <= SEG_empty; -- turn off all segments
+    --     end if;
+    -- end process display_segment;
 
 end Behavioral;
