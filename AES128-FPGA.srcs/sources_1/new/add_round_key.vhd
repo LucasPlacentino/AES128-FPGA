@@ -21,7 +21,7 @@ entity add_round_key is
     port (
         matrix_in: in byte_matrix_t; -- input to AddRoundKey
         key: in byte_matrix_t; -- key for AddRoundKey
-        matrix_out: out byte_matrix_t -- output block
+        matrix_out: out byte_matrix_t -- output matrix
     );
 end add_round_key;
 
