@@ -51,14 +51,14 @@ architecture Behavioral of top_io is
     signal reset_encryption: std_logic := '0';
 
     signal strt_ff1, strt_sync: std_logic := '0'; -- flip-flops for synchronizing
-    signal strt: std_logic; -- pulse when btnC is pressed (start encryption)
+    signal strt: std_logic := '0'; -- pulse when btnC is pressed (start encryption)
 
     signal rst_ff1, rst_sync: std_logic := '0'; -- flip-flops for synchronizing
-    signal rst: std_logic; -- pulse when btnR is pressed (reset encryption)
+    signal rst: std_logic := '0'; -- pulse when btnR is pressed (reset encryption)
 
     --debug:
     signal dbg_ff1, dbg_sync: std_logic := '0'; -- flip-flops for synchronizing
-    signal dbg: std_logic; -- pulse when btnD (debug button)
+    signal dbg: std_logic := '0'; -- pulse when btnD (debug button)
 
     --constant DEBOUNCE_CYCLES: integer := 1_000_000; -- tune for debouncing time
     --signal strt_prev: std_logic := '0'; -- previous value of start signal (for debouncing)
@@ -66,11 +66,13 @@ architecture Behavioral of top_io is
     --signal rst_prev: std_logic := '0'; -- previous value of reset signal (for debouncing)
     --signal db_count_rst: unsigned(19 downto 0) := (others => '0'); -- counter for debouncing reset button
 
+    signal step: integer range 0 to 11 := 0; -- current step of encryption (0 is idle, 1-11 are encryption steps)
+    signal show_aes: std_logic := '0'; -- signal to show "AES" on 7-segment display
     signal done: std_logic := '0'; -- is 1 when encryption is done
     signal v_o: std_logic_vector(127 downto 0); -- OUTPUT VECTOR
 
     -- TEST VECTOR, CHANGE HERE:
-    constant test_vector: std_logic_vector(127 downto 0) := x"00112233445566778899aabbccddeeff"; -- INPUT VECTOR
+    constant test_text: std_logic_vector(127 downto 0) := x"6BC1BEE2_2E409F96_E93D7E11_7393172A"; -- INPUT VECTOR
 
     -- -- 7-segment patterns for letters AES (active-low)
     -- constant SEG_empty : std_logic_vector(6 downto 0) := "1111111"; -- all segments off
@@ -99,18 +101,30 @@ architecture Behavioral of top_io is
             start: in std_logic;
             v_i: in std_logic_vector(127 downto 0);
             v_o: out std_logic_vector(127 downto 0);
-            aes_done: out std_logic
+            aes_done: out std_logic;
+            step: out integer range 0 to 11 --! 0 is idle, 1-11 are encryption step
         );
     end component;
 
 begin
 
-    leds_proc: process(done, state)
+    encryption_aes_c: aes_enc
+        port map (
+            clk => clk, -- main clock
+            reset => reset_encryption, -- reset signal from FSM
+            start => start_encryption, -- start signal from FSM
+            v_i => test_text, -- input vector (plaintext)
+            v_o => v_o, -- output vector (ciphertext)
+            aes_done => done, -- done flag
+            step => step -- current step (0 is idle, 1-11 are encryption steps to show on LEDs)
+        );
+
+    leds_proc: process(done, state, step)
     begin
         --TODO: rest of LEDs
         led <= (others => '0');
         --------------------
-        
+
         led(0) <= done;
         case state is
             when IDLE =>
@@ -120,16 +134,18 @@ begin
             when DONE_S =>
                 led(15) <= '1'; -- indicate done state
          end case;
-    end process;
+
+        if step >= 1 and step <= 11 then
+            led(15-step) <= '1'; --(15-step) because left-most led is led15
+        end if;
+    end process leds_proc;
     --led(0) <= done; -- light up led0 according to done flag/signal
 
-    --DEBUG: COMMENT OUT AFTER
-    done <= dbg;
     
     --do button debouncing ?
 
     -- states: IDLE, ENCRYPTING/RUNNING, DONE_S
-    main_fsm: process(clk)
+    main_fsm_proc: process(clk)
     begin
         if rising_edge(clk) then
 
@@ -141,7 +157,6 @@ begin
 
             --DEBUG: COMMENT OUT AFTER
             dbg <= dbg_sync; -- debug signal from btnD
-            -- TODO: add a done_dbg ?
 
             -- FSM:
             --if rst = '1' then
@@ -179,19 +194,9 @@ begin
             end case;
             --end if;
         end if;
-    end process main_fsm;
+    end process main_fsm_proc;
 
-    -- encryption_aes: aes_enc
-    --     port map (
-    --         clock => clk, -- main clock
-    --         reset => reset_encryption, -- reset signal from FSM
-    --         start => start_encryption, -- start signal from FSM
-    --         v_i => test_vector, -- input vector
-    --         v_o => v_o, -- output vector
-    --         aes_done => done -- done flag
-    --     );
-
-    btn_sync: process(clk)
+    btn_sync_proc: process(clk)
     begin -- synchronize button presses (protects against metastability), enters clock domain
         if rising_edge(clk) then
             strt_ff1 <= btnC;
@@ -204,7 +209,7 @@ begin
             dbg_ff1 <= btnD;
             dbg_sync <= dbg_ff1;
         end if;
-    end process btn_sync;
+    end process btn_sync_proc;
 
     -- btn_debounce: process(clk)
     -- begin
@@ -246,13 +251,13 @@ begin
     --     end if;
     -- end process btn_clock;
 
-
-    display_i : display
+    show_aes <= done or dbg;
+    display_c : display
         port map (
             clk => clk,
             an => an,
             seg => seg,
-            show_aes => done
+            show_aes => show_aes
         );
 
     -- -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- TODO: adjust divider
