@@ -55,10 +55,9 @@ begin
 
 
     --without a process:
+    --creates a s_box instance for every byte in the matrix
     gen_rows: for i in 0 to 3 generate
         gen_cols: for j in 0 to 3 generate
-            -- We generate as much S_boxes as bytes in a 4x4 matrix and connect
-            -- them to each byte.
             s_box_c : S_box port map(
                 byte_in => matrix_in(i, j),
                 byte_out => matrix_out(i, j)

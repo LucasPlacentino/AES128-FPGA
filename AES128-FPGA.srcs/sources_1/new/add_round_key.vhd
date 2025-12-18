@@ -47,6 +47,7 @@ begin
 
 
     --without a process:
+    --creates an xor operation for every byte in the matrix
     gen_rows: for i in 0 to 3 generate
         gen_cols: for j in 0 to 3 generate
             matrix_out(i, j) <= matrix_in(i, j) xor key(i, j);
