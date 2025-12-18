@@ -96,17 +96,10 @@ begin
     begin
         if rising_edge(clk) then
 
-            -- BTN synchronization:
-            rst_ff1 <= btnR;
-            rst_ff2 <= rst_ff1;
+            -- BTN synchronization done in another process below
 
             -- temporary? no debouncing
             rst <= rst_ff2;
-
-            strt_ff1 <= btnC;
-            strt_ff2 <= strt_ff1;
-
-            -- temporary? no debouncing
             strt <= strt_ff2;
 
             -- FSM:
@@ -157,16 +150,16 @@ begin
             done => done -- done flag
         );
 
-    -- btn_sync: process(clk)
-    -- begin -- synchronize button presses (protects against metastability), enters clock domain
-    --     if rising_edge(clk) then
-    --         strt_ff1 <= btnC;
-    --         strt_ff2 <= strt_ff1;
+    btn_sync: process(clk)
+    begin -- synchronize button presses (protects against metastability), enters clock domain
+        if rising_edge(clk) then
+            strt_ff1 <= btnC;
+            strt_ff2 <= strt_ff1;
 
-    --         rst_ff1 <= btnR;
-    --         rst_ff2 <= rst_ff1;
-    --     end if;
-    -- end process btn_sync;
+            rst_ff1 <= btnR;
+            rst_ff2 <= rst_ff1;
+        end if;
+    end process btn_sync;
 
     -- btn_debounce: process(clk)
     -- begin
