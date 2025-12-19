@@ -258,26 +258,6 @@ begin
     --     end if;
     -- end process btn_debounce;
 
-
-    -- btn_clock: process(clk)
-    -- begin
-    --     if rising_edge(clk) then
-    --         -- start signal generation
-    --         if btnC = '1' then
-    --             strt <= '1';
-    --         else
-    --             strt <= '0';
-    --         end if;
-
-    --         -- reset signal generation
-    --         if btnR = '1' then
-    --             rst <= '1';
-    --         else
-    --             rst <= '0';
-    --         end if;
-    --     end if;
-    -- end process btn_clock;
-
     show_aes <= done or dbg;
     display_c : display
         port map (
@@ -287,7 +267,8 @@ begin
             show_aes => show_aes
         );
 
-    -- -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- TODO: adjust divider
+    -- -- display is done in component above
+    -- -- the whole cycle thorugh all 4 digits must be 1-16ms ? -- todo: adjust divider
     -- display_segment_clock: process(clk) -- display's sub_clock
     -- begin
     --     if rising_edge(clk) then
@@ -301,8 +282,6 @@ begin
     --             -- tick 0
     --             -- display_tick <= '0';
     --         end if;
-
-
     --         -- if display_tick = '1' then
     --         --     -- if selected_digit = 3 then
     --         --     --     selected_digit <= 0;
@@ -322,7 +301,7 @@ begin
     --         -- show "AES" on 7-segment display
     --         case selected_digit is
     --             when "00" =>
-    --                 an <= "1110"; -- TODO: verify anode order
+    --                 an <= "1110";
     --                 seg <= SEG_S;
     --             when "01" =>
     --                 an <= "1101";
