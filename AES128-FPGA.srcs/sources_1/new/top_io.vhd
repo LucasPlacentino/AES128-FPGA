@@ -26,7 +26,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL; -- for unsigned types
---use work.matrix_type_pkg.ALL; -- don't need it here for now
+use work.matrix_type_pkg.ALL; -- for key array type
 
 entity top_io is
     port (
@@ -74,6 +74,24 @@ architecture Behavioral of top_io is
     -- TEST VECTOR, CHANGE HERE:
     constant test_text: std_logic_vector(127 downto 0) := x"6BC1BEE2_2E409F96_E93D7E11_7393172A"; -- INPUT VECTOR
 
+    --put this to aes_enc
+    -- Round keys array:
+    constant RKS: rk_array_t(0 to 10) := (
+    -- constant RKS: array(0 to 10) of std_logic_vector(127 downto 0) := (
+        --key for round 1 to 11
+        x"2b7e151628aed2a6abf7158809cf4f3c", -- initial key (1st round)
+        x"a0fafe1788542cb123a339392a6c7605", -- round 2
+        x"f2c295f27a96b9435935807a7359f67f", -- round 3
+        x"3d80477d4716fe3e1e237e446d7a883b", -- round 4
+        x"ef44a541a8525b7fb671253bdb0bad00", -- round 5
+        x"d4d1c6f87c839d87caf2b8bc11f915bc", -- round 6
+        x"6d88a37a110b3efddbf98641ca0093fd", -- round 7
+        x"4e54f70e5f5fc9f384a64fb24ea6dc4f", -- round 8
+        x"ead27321b58dbad2312bf5607f8d292f", -- round 9
+        x"ac7766f319fadc2128d12941575c006e", -- round 10
+        x"d014f9a8c9ee2589e13f0cc8b6630ca6" -- round 11 (final)
+    );
+
     -- -- 7-segment patterns for letters AES (active-low)
     -- constant SEG_empty : std_logic_vector(6 downto 0) := "1111111"; -- all segments off
     -- constant SEG_A : std_logic_vector(6 downto 0) := "0001000"; -- A (a,b,c,e,f,g segments)
@@ -99,6 +117,7 @@ architecture Behavioral of top_io is
             clk: in std_logic;
             reset: in std_logic;
             start: in std_logic;
+            rks: in rk_array_t;
             v_i: in std_logic_vector(127 downto 0);
             v_o: out std_logic_vector(127 downto 0);
             aes_done: out std_logic;
@@ -113,6 +132,7 @@ begin
             clk => clk, -- main clock
             reset => reset_encryption, -- reset signal from FSM
             start => start_encryption, -- start signal from FSM
+            rks => RKS, -- round keys array
             v_i => test_text, -- input vector (plaintext)
             v_o => v_o, -- output vector (ciphertext)
             aes_done => done, -- done flag

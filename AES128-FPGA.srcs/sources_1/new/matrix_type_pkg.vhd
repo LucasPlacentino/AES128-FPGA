@@ -6,15 +6,16 @@ use IEEE.STD_LOGIC_1164.ALL;
 package matrix_type_pkg is
 
     type byte_matrix_t is array (0 to 3, 0 to 3) of std_logic_vector (7 downto 0); -- 4x4 matrix of bytes
+    type rk_array_t is array(0 to 10) of std_logic_vector(127 downto 0); -- array of 11 round keys
 
-    function to_byte_matrix (input_vector: std_logic_vector(127 downto 0)) return byte_matrix_t;
+    function to_matrix (input_vector: std_logic_vector(127 downto 0)) return byte_matrix_t;
     function to_vector (input_matrix: byte_matrix_t) return std_logic_vector;
 
 end package matrix_type_pkg;
 
 package body matrix_type_pkg is
 
-    function to_byte_matrix (input_vector: std_logic_vector (127 downto 0)) return byte_matrix_t is
+    function to_matrix (input_vector: std_logic_vector (127 downto 0)) return byte_matrix_t is
         variable mat : byte_matrix_t;
     begin
         for i in 0 to 3 loop
