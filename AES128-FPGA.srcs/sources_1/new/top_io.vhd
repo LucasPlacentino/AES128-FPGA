@@ -66,7 +66,7 @@ architecture Behavioral of top_io is
     --signal rst_prev: std_logic := '0'; -- previous value of reset signal (for debouncing)
     --signal db_count_rst: unsigned(19 downto 0) := (others => '0'); -- counter for debouncing reset button
 
-    signal step: integer range 0 to 11 := 0; -- current step of encryption (0 is idle, 1-11 are encryption steps)
+    signal progress: integer range 0 to 11 := 0; -- current round of encryption (0 is idle (or done), 1-11 are encryption rounds)
     signal show_aes: std_logic := '0'; -- signal to show "AES" on 7-segment display
     signal done: std_logic := '0'; -- is 1 when encryption is done
     signal v_o: std_logic_vector(127 downto 0); -- OUTPUT VECTOR
@@ -136,14 +136,17 @@ begin
             v_i => test_text, -- input vector (plaintext)
             v_o => v_o, -- output vector (ciphertext)
             aes_done => done, -- done flag
-            step => step -- current step (0 is idle, 1-11 are encryption steps to show on LEDs)
+            led_progress => progress -- current step (0 is idle, 1-11 are encryption steps to show on LEDs)
         );
 
-    leds_proc: process(done, state, step)
+    leds_proc: process(done, state, progress)
     begin
-        --TODO: rest of LEDs
+        -- default is all off
         led <= (others => '0');
         --------------------
+        -- led(15) show board state (idle/running/done)
+        -- led(13 downto 2) show aes_enc progress (rounds 0(idle) to 11)
+        -- led(0) show done signal (in addition to showing AES on display)
 
         led(0) <= done;
         case state is
@@ -155,9 +158,10 @@ begin
                 led(15) <= '1'; -- indicate done state
          end case;
 
-        if step >= 1 and step <= 11 then
-            led(15-step) <= '1'; --(15-step) because left-most led is led15
-        end if;
+        -- 11+1 rounds of progress
+        led(13 downto 2) <= to_stdlogicvector(unsigned(progress), 12); -- show rounds progress on leds 13 to 2
+        --led(14 downto 3) <= (others => '0')-- when done = '1' else led(14 downto 3) to_stdlogicvector(unsigned(progress), 12);
+        --led(14-progress) <= '1'; --(14-progress) because left-most led is led15
     end process leds_proc;
     --led(0) <= done; -- light up led0 according to done flag/signal
 
