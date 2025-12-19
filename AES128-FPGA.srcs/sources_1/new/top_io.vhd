@@ -121,7 +121,7 @@ architecture Behavioral of top_io is
             v_i: in std_logic_vector(127 downto 0);
             v_o: out std_logic_vector(127 downto 0);
             aes_done: out std_logic;
-            step: out integer range 0 to 11 --! 0 is idle, 1-11 are encryption step
+            led_progress: out integer range 0 to 11 --! 0 is idle, 1-11 are encryption step
         );
     end component;
 
@@ -158,20 +158,20 @@ begin
                 led(15) <= '1'; -- indicate done state
          end case;
 
-        -- 11+1 rounds of progress
-        led(13 downto 2) <= to_stdlogicvector(unsigned(progress), 12); -- show rounds progress on leds 13 to 2
-        --led(14 downto 3) <= (others => '0')-- when done = '1' else led(14 downto 3) to_stdlogicvector(unsigned(progress), 12);
-        --led(14-progress) <= '1'; --(14-progress) because left-most led is led15
-    end process leds_proc;
-    --led(0) <= done; -- light up led0 according to done flag/signal
+         -- 11+1 rounds of progress (0to11, 0 is idle)
+        led(13-progress) <= '1'; -- show rounds progress on leds 13 to 2
 
-    
+    end process leds_proc;
+
     --do button debouncing ?
 
     -- states: IDLE, ENCRYPTING/RUNNING, DONE_S
     main_fsm_proc: process(clk)
     begin
         if rising_edge(clk) then
+
+            start_encryption <= '0';
+            reset_encryption <= '0';
 
             -- BTN synchronization done in another process below
 
@@ -188,32 +188,35 @@ begin
             --else
             case state is
                 when IDLE =>
-                    reset_encryption <= '0';
+                    --reset_encryption <= '0';
                     if strt = '1' then
                         state <= RUNNING;
                         start_encryption <= '1'; --must
-                    else
-                        state <= IDLE;
-                        start_encryption <= '0'; --dh
+                    -- else is not necessary
+                    -- else
+                    --     state <= IDLE;
+                        --start_encryption <= '0'; --dh
                     end if;
                 when RUNNING =>
-                    reset_encryption <= '0';
+                    --reset_encryption <= '0';
                     if done = '1' then
                         state <= DONE_S;
-                        start_encryption <= '0'; --must
-                    else
-                        state <= RUNNING;
+                        --start_encryption <= '0'; --must
+                    -- else is not necessary
+                    -- else
+                    --     state <= RUNNING;
                         --already start_encryption <= '1';
                     end if;
                 when DONE_S =>
                     if rst = '1' then
                         state <= IDLE;
-                        start_encryption <= '0'; --dh
+                        --start_encryption <= '0'; --dh
                         reset_encryption <= '1'; --must
-                    else
-                        state <= DONE_S;
-                        start_encryption <= '0'; --dh
-                        reset_encryption <= '0';
+                    -- else is not necessary
+                    -- else
+                    --     state <= DONE_S;
+                        --start_encryption <= '0'; --dh
+                        --reset_encryption <= '0';
                     end if;
             end case;
             --end if;

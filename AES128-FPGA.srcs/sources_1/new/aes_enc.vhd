@@ -70,7 +70,7 @@ architecture Behavioral of aes_enc is
     type encryption_state_t is (IDLE, PRE, PROCESSING, POST, DONE);
     signal enc_state: encryption_state_t := IDLE; -- default state is IDLE
     type step_state_t is (SUB_BYTES_S, SHIFT_ROWS_S, MIX_COLUMNS_S, ADD_ROUND_KEY_S);
-    signal step_state: step_state_t := SUB_BYTES_S; -- default state is SUB_BYTES_S
+    signal step_state: step_state_t := SUB_BYTES_S; -- default state is SUB_BYTES_S (it's the first step)
 
     signal ark_k: byte_matrix_t; -- AddRoundKey key
     signal ark_i: byte_matrix_t; -- AddRoundKey input, will also be the very first input
@@ -124,28 +124,29 @@ begin
     -- then output the result, cipher text (encrypted)
 
     -- main FSM process
-    -- macro FSM for enc_state and micro FSM for step_state
+    -- outer FSM for enc_state and inner FSM for step_state
     enc_fsm_proc: process(clk)
-        variable round: integer range 1 to 9 := 1;
+        -- signal or variable ?
+        variable round: integer range 1 to 9 := 1; -- count round number for processing state
     begin
         if rising_edge(clk) then
             -- reset happens only during DONE state
             aes_done <= '0'; -- default (see DONE case for high)
             case enc_state is
                 when IDLE =>
+                    led_progress <= 0;
                     if start = '1' then
                         enc_state <= PRE;
                         ark_k <= to_matrix(rks(0)); -- initial round key (1st)
                         ark_i <= to_matrix(v_i); -- input plain text input to AddRoundKey
                         round := 1;
-                        led_progress <= 0;
                     end if;
                 when PRE =>
+                    led_progress <= 1;
                     -- we are in the pre rounds step (first AddRoundKey), we start the processing steps (output to SubBytes)
                     sb_i <= ark_o; -- output of AddRoundKey goes to SubBytes input
                     enc_state <= PROCESSING;
                     step_state <= SUB_BYTES_S;
-                    led_progress <= 1;
                 when PROCESSING =>
                     led_progress <= 1 + round;
                     case step_state is
@@ -205,6 +206,7 @@ begin
                         sr_i  <= ZERO_MATRIX;
                         sb_i  <= ZERO_MATRIX;
                         ark_i <= ZERO_MATRIX;
+                        ark_k <= ZERO_MATRIX;
 
                     end if;
                 when others => --dh ?
@@ -221,6 +223,7 @@ begin
                     sr_i  <= ZERO_MATRIX;
                     sb_i  <= ZERO_MATRIX;
                     ark_i <= ZERO_MATRIX;
+                    ark_k <= ZERO_MATRIX;
             end case;
         end if;
     end process enc_fsm_proc;
