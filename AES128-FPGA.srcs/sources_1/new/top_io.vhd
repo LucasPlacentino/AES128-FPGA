@@ -76,7 +76,7 @@ architecture Behavioral of top_io is
 
     --put this to aes_enc
     -- Round keys array:
-    constant RKS: rk_array_t(0 to 10) := (
+    constant RKS: rk_array_t := (
     -- constant RKS: array(0 to 10) of std_logic_vector(127 downto 0) := (
         --key for round 1 to 11
         x"2b7e151628aed2a6abf7158809cf4f3c", -- initial key (1st round)

@@ -44,7 +44,7 @@ architecture Behavioral of aes_enc is
         );
     end component;
     -- sub_bytes:
-    component sub_bytes is
+    component sub_byte is
         port (
             matrix_in: in byte_matrix_t;
             matrix_out: out byte_matrix_t 
@@ -87,7 +87,7 @@ architecture Behavioral of aes_enc is
 
 begin
 
-    sub_bytes_c : sub_bytes
+    sub_bytes_c : sub_byte
         port map (
             matrix_in => sb_i,
             matrix_out => sb_o
