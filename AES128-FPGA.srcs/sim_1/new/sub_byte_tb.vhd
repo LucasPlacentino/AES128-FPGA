@@ -15,7 +15,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity sub_byte_tb is
---  Port ( );
+    --  no i/o
 end sub_byte_tb;
 
 architecture bench of sub_byte_tb is

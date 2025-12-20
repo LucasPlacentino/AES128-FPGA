@@ -15,7 +15,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity mix_columns_tb is
---  Port ( );
+    --  no i/o
 end mix_columns_tb;
 
 architecture bench of mix_columns_tb is

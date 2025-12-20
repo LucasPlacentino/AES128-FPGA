@@ -15,7 +15,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity shift_rows_tb is
---  Port ( );
+    --  no i/o
 end shift_rows_tb;
 
 architecture bench of shift_rows_tb is

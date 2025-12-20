@@ -67,8 +67,10 @@ architecture Behavioral of aes_enc is
     -- -----------------------------------
 
     -- -- Signals --
+    -- Macro state
     type encryption_state_t is (IDLE, PRE, PROCESSING, POST, DONE);
     signal enc_state: encryption_state_t := IDLE; -- default state is IDLE
+    -- Micro state
     type step_state_t is (SUB_BYTES_S, SHIFT_ROWS_S, MIX_COLUMNS_S, ADD_ROUND_KEY_S);
     signal step_state: step_state_t := SUB_BYTES_S; -- default state is SUB_BYTES_S (it's the first step)
 
@@ -162,7 +164,7 @@ begin
                             step_state <= ADD_ROUND_KEY_S;
                         when ADD_ROUND_KEY_S =>
                             -- check if last round
-                            if round = 9 then -- >=9 to be sure ?
+                            if round = 9 then -- last round, >=9 to be sure ?
                                 enc_state <= POST;
                             else
                                 round := round + 1;

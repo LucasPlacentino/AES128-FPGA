@@ -20,7 +20,7 @@ package body matrix_type_pkg is
     begin
         for i in 0 to 3 loop
             for j in 0 to 3 loop
-                mat(i, j) := input_vector(127 - (j*4 + i)*8 downto 127 - (j*4 + i + 1)*8 + 1);
+                mat(i, j) := input_vector(127 - (j*4 + i)*8 downto 127 - (j*4 + i + 1)*8 + 1); -- i=0 j=0 is 127-120 so the first byte
             end loop;
         end loop;
         return mat;

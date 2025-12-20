@@ -54,7 +54,10 @@ begin
     -- matrix_out <= temp_matrix;
 
 
+
+
     --without a process:
+    -- use generation:
     --creates a s_box instance for every byte in the matrix
     gen_rows: for i in 0 to 3 generate
         gen_cols: for j in 0 to 3 generate

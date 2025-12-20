@@ -30,7 +30,7 @@ architecture Behavioral of add_round_key is
     -- bitwise XOR between input matrix and key
 
 
-    --signal temp_matrix: byte_matrix4;
+    --signal temp_matrix: byte_matrix_t := ( others => (others => x"00") );
 
 begin
 

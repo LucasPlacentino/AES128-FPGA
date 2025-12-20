@@ -25,7 +25,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL; -- for unsigned types
+use IEEE.NUMERIC_STD.ALL; -- for integer, unsigned types
 use work.matrix_type_pkg.ALL; -- for key array type
 
 entity top_io is
@@ -208,6 +208,9 @@ begin
                         --already start_encryption <= '1';
                     end if;
                 when DONE_S =>
+
+                    --! TODO: add a comparison of v_o to expected ciphertext for debug? like light LEDs if match/fail
+
                     if rst = '1' then
                         state <= IDLE;
                         --start_encryption <= '0'; --dh
@@ -218,6 +221,8 @@ begin
                         --start_encryption <= '0'; --dh
                         --reset_encryption <= '0';
                     end if;
+                when others =>
+                    state <= IDLE;
             end case;
             --end if;
         end if;
