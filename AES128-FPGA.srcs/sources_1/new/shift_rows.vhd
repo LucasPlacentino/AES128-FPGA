@@ -58,6 +58,17 @@ begin
 
     -- matrix_out <= temp_matrix;
 
+    -- temp matrix is unnecessary
+
+
+    -- -- uses generation
+    -- --creates the shift operations for every row
+    -- gen_rows: for i in 0 to 3 generate
+    --     gen_cols: for j in 0 to 3 generate
+    --         matrix_out(i, j) <= matrix_in(i, (j + i) mod 4); -- left circular shift
+    --     end generate;
+    -- end generate;
+    -- -- generation does what's below:
 
     -- row 0: no shift
     matrix_out(0, 0) <= matrix_in(0, 0);
@@ -82,14 +93,5 @@ begin
     matrix_out(3, 1) <= matrix_in(3, 0);
     matrix_out(3, 2) <= matrix_in(3, 1);
     matrix_out(3, 3) <= matrix_in(3, 2);
-
-
-    -- -- uses generation
-    -- --creates the shift operations for every row
-    -- gen_rows: for i in 0 to 3 generate
-    --     gen_cols: for j in 0 to 3 generate
-    --         matrix_out(i, j) <= matrix_in(i, (j + i) mod 4); -- left circular shift
-    --     end generate;
-    -- end generate;
 
 end Behavioral;
