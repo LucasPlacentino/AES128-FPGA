@@ -73,8 +73,8 @@ architecture Behavioral of top_io is
 
     -- TEST VECTOR, CHANGE HERE:
     constant test_text: std_logic_vector(127 downto 0) := x"6BC1BEE2_2E409F96_E93D7E11_7393172A"; -- INPUT VECTOR
-
-    --put this to aes_enc
+    constant expected_ciphertext: std_logic_vector(127 downto 0) := x"3AD77BB4_0D7A3660_A89ECAF3_2466EF97"; -- expected output for the test vector above with the keys below
+    --to give to aes_enc
     -- Round keys array:
     constant RKS: rk_array_t := (
     -- constant RKS: array(0 to 10) of std_logic_vector(127 downto 0) := (
@@ -139,7 +139,7 @@ begin
             led_progress => progress -- current step (0 is idle, 1-11 are encryption steps to show on LEDs)
         );
 
-    leds_proc: process(done, state, progress)
+    leds_proc: process(done, state, progress, v_o)
     begin
         -- default is all off
         led <= (others => '0');
@@ -156,6 +156,10 @@ begin
                 led(15) <= '0'; -- indicate running state
             when DONE_S =>
                 led(15) <= '1'; -- indicate done state
+
+                if v_o = expected_ciphertext then
+                    led(7) <= '1'; -- indicate correct output
+                end if;
          end case;
 
          -- 11+1 rounds of progress (0to11, 0 is idle)
@@ -210,6 +214,10 @@ begin
                 when DONE_S =>
 
                     --! TODO: add a comparison of v_o to expected ciphertext for debug? like light LEDs if match/fail
+                    -- done in LEDs process above
+                    -- if v_o = expected_ciphertext then
+                    --     led(7) <= '1'; -- indicate correct output
+                    -- end if;
 
                     if rst = '1' then
                         state <= IDLE;
