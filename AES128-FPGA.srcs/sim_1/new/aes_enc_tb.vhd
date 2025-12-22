@@ -67,6 +67,10 @@ architecture bench of aes_enc_tb is
     signal done_enc: std_logic := '0';
 
     constant clock_period: time := 10 ns; -- 100MHz clock = 10ns period
+    signal result: std_logic_vector(127 downto 0) := (others => '0'); --only to show output in simulator wave window for longer
+    signal expected_result: std_logic_vector(127 downto 0) := (others => '0');
+
+    shared variable expected_output: std_logic_vector(127 downto 0);
 
 begin
 
@@ -95,6 +99,19 @@ begin
         end loop;
     end process clk_process;
 
+    get_output: process(output_vector)
+    begin
+        if output_vector /= x"00000000_00000000_00000000_00000000" then
+            result <= output_vector; -- keep output stable for viewing in simulator (output_vector quickly goes back to 0 after each test)
+            expected_result <= expected_output;
+        end if;
+    end process get_output;
+
+    -- result_check: process(result, expected_result)
+    -- begin
+    --     assert result = expected_result report "Result signal does not match expected result" severity error;
+    -- end process result_check;
+
     stimulus: process
         constant enc_time: time := 41 * clock_period; --! enough for encryption to finish ?
         -- each clock cycle takes 10ns (100MHz clock)
@@ -108,28 +125,39 @@ begin
         -- TODO: need to verify this timing
         -- add a margin of error? like 1 clock cycle more?
 
-        variable expected_output: std_logic_vector(127 downto 0);
+        -- variable expected_output: std_logic_vector(127 downto 0);
+
+        --variable result_v: std_logic_vector(127 downto 0) := (others => '0'); --only to show output in simulator wave window for longer
 
     begin
 
-        -- -- reset testbench
-        -- reset_enc <= '1';
-        -- wait for enc_time; -- wait enough time for reset to propagate
-        -- reset_enc <= '0';
-        -- wait for enc_time; -- wait enough time for reset to propagate
+        -- if output_vector /= x"00000000_00000000_00000000_00000000" then
+        --     result_v := output_vector; -- keep output stable for viewing in simulator (output_vector quickly goes back to 0 after each test)
+        --     result <= result_v;
+        -- end if;
+
+        -- reset testbench
+        input_vector <= (others => '0');
+        reset_enc <= '1';
+        wait for enc_time; -- wait enough time for reset to propagate
+        reset_enc <= '0';
+        wait for enc_time/4; -- wait enough time for reset to propagate
 
         -- test 0 (sanity check):
         input_vector <= x"00000000_00000000_00000000_00000000";
-        expected_output := x"66E94BD4_EF8A2C3B_884CFA59_CA342B2E"; -- see https://simewu.com/aes/
+        expected_output := x"7DF76B0C_1AB899B3_3E42F047_B91B546F"; -- see https://simewu.com/aes/ with key 2B7E151628AED2A6ABF7158809CF4F3C (key from NIST AES_Core128.pdf Block Cipher Modes of Operation Electronic Codebook (ECB))
         start_enc <= '1';
         wait for enc_time; -- wait enough time for encryption to finish
-        start_enc <= '0';
+        -- expected_result <= expected_output;
         assert done_enc = '1' report "Test 0 SANITY CHECK failed, AES done signal not high after encryption delay passed" severity error;
+        start_enc <= '0';
         wait for 1 ns; -- small wait to ensure output_vector is stable
-        assert output_vector = expected_output report "Test 0 SANITY CHECK failed, output mismatch" severity error;
+        assert output_vector = expected_output report "Test 0 SANITY CHECK failed, output mismatch" severity error; --or comapre to `result`?
+        -- assert result = expected_result report "Test 0 SANITY CHECK failed, result signal mismatch" severity error;
         -- reset:
         reset_enc <= '1';
         wait for enc_time; -- wait enough time for reset to propagate
+        -- wait for 2ns;
         reset_enc <= '0';
 
         -- test 1:
@@ -137,13 +165,16 @@ begin
         expected_output := x"3AD77BB4_0D7A3660_A89ECAF3_2466EF97"; -- from NIST AES_Core128.pdf Block Cipher Modes of Operation Electronic Codebook (ECB)
         start_enc <= '1';
         wait for enc_time; -- wait enough time for encryption to finish
+        -- expected_result <= expected_output;
         start_enc <= '0';
         assert done_enc = '1' report "Test 1 failed, AES done signal not high after encryption delay passed" severity error;
         wait for 1 ns; -- small wait to ensure output_vector is stable
         assert output_vector = expected_output report "Test 1 failed, output mismatch" severity error;
+        -- assert result = expected_result report "Test 1 failed, result signal mismatch" severity error;
         -- reset:
         reset_enc <= '1';
         wait for enc_time; -- wait enough time for reset to propagate
+        -- wait for 2ns;
         reset_enc <= '0';
 
         -- test 2:
@@ -151,13 +182,16 @@ begin
         expected_output := x"F5D3D585_03B9699D_E785895A_96FDBAAF"; -- from NIST AES_Core128.pdf Block Cipher Modes of Operation Electronic Codebook (ECB)
         start_enc <= '1';
         wait for enc_time; -- wait enough time for encryption to finish
+        -- expected_result <= expected_output;
         start_enc <= '0';
         assert done_enc = '1' report "Test 2 failed, AES done signal not high after encryption delay passed" severity error;
         wait for 1 ns; -- small wait to ensure output_vector is stable
         assert output_vector = expected_output report "Test 2 failed, output mismatch" severity error;
+        -- assert result = expected_result report "Test 2 failed, result signal mismatch" severity error;
         -- reset:
         reset_enc <= '1';
         wait for enc_time; -- wait enough time for reset to propagate
+        -- wait for 2ns;
         reset_enc <= '0';
 
         -- test 3:
@@ -165,13 +199,16 @@ begin
         expected_output := x"43B1CD7F_598ECE23_881B00E3_ED030688"; -- from NIST AES_Core128.pdf Block Cipher Modes of Operation Electronic Codebook (ECB)
         start_enc <= '1';
         wait for enc_time; -- wait enough time for encryption to finish
+        -- expected_result <= expected_output;
         start_enc <= '0';
         assert done_enc = '1' report "Test 3 failed, AES done signal not high after encryption delay passed" severity error;
         wait for 1 ns; -- small wait to ensure output_vector is stable
         assert output_vector = expected_output report "Test 3 failed, output mismatch" severity error;
+        -- assert result = expected_result report "Test 3 failed, result signal mismatch" severity error;
         -- reset:
         reset_enc <= '1';
         wait for enc_time; -- wait enough time for reset to propagate
+        -- wait for 2ns;
         reset_enc <= '0';
 
         -- test 4:
@@ -179,14 +216,19 @@ begin
         expected_output := x"7B0C785E_27E8AD3F_82232071_04725DD4"; -- from NIST AES_Core128.pdf Block Cipher Modes of Operation Electronic Codebook (ECB)
         start_enc <= '1';
         wait for enc_time; -- wait enough time for encryption to finish
+        -- expected_result <= expected_output;
         start_enc <= '0';
         assert done_enc = '1' report "Test 4 failed, AES done signal not high after encryption delay passed" severity error;
         wait for 1 ns; -- small wait to ensure output_vector is stable
         assert output_vector = expected_output report "Test 4 failed, output mismatch" severity error;
+        -- assert result = expected_result report "Test 4 failed, result signal mismatch" severity error;
         -- reset:
         reset_enc <= '1';
         wait for enc_time; -- wait enough time for reset to propagate
+        -- wait for 2ns;
         reset_enc <= '0';
+        
+        wait for enc_time; -- wait before ending simulation
 
 
     end process stimulus;
