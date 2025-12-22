@@ -45,7 +45,7 @@ begin
 
     stimulus: process
         variable expected_output: byte_matrix_t;
-        variable delay_time: time := 12 ns; --delay ? 10ns ? 20ns ? 40ns ?
+        variable delay_time: time := 2 ns; --delay ? 10ns ? 12ns ? 20ns ? 40ns ?
         -- 100MHz->10ns clock period
         -- but the logic in ARK is purely combinatorial we could just put 1ns?
     begin
