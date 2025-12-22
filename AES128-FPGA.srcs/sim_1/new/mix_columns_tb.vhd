@@ -13,6 +13,7 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use work.matrix_type_pkg.ALL;
 
 entity mix_columns_tb is
     --  no i/o
@@ -20,7 +21,61 @@ end mix_columns_tb;
 
 architecture bench of mix_columns_tb is
 
+    component mix_columns
+        port (
+            matrix_in: in byte_matrix_t; -- input to mix_columns
+            matrix_out: out byte_matrix_t -- output matrix
+    );
+    end component;
+
+    signal matrix_input: byte_matrix_t;
+    signal matrix_output: byte_matrix_t;
+
 begin
 
+    mix_col_c: mix_columns
+        port map (
+            matrix_in => matrix_input,
+            matrix_out => matrix_output
+        );
+
+    stimulus: process
+        variable expected_output: byte_matrix_t;
+        variable delay_time: time := 2 ns; --delay ? 10ns ? 12ns ? 20ns ? 40ns ?
+        -- 100MHz->10ns clock period
+        -- but the logic in MixColumns is purely combinatorial we could just put 1ns?
+    begin
+
+        -- sanity check (test 0):
+        matrix_input <= to_matrix(x"00000000_00000000_00000000_00000000");
+        expected_output := to_matrix(x"00000000_00000000_00000000_00000000");
+        wait for delay_time;
+        assert matrix_output = expected_output report "Test 0 SANITY CHECK failed, output mismatch" severity error;
+
+        -- test 1:
+        matrix_input <= to_matrix(x"09287F47_6F746ABF_2C4A6204_DA08E3EE");
+        expected_output := to_matrix(x"529F16C2_978615CA_E01AAE54_BA1A2659");
+        wait for delay_time;
+        assert matrix_output = expected_output report "Test 1 failed, output mismatch" severity error;
+
+        -- test 2:
+        matrix_input <= to_matrix(x"89B5884A_C0565303_2E389B21_604D123C");
+        expected_output := to_matrix(x"0F31E929_319A3558_AEC95893_39F04D87");
+        wait for delay_time;
+        assert matrix_output = expected_output report "Test 2 failed, output mismatch" severity error;
+
+        -- test 3:
+        matrix_input <= to_matrix(x"54FE6141_B3B0EAB9_68D310AF_D60D641E");
+        expected_output := to_matrix(x"9151ABE1_E5541CFD_014A713E_DA7E3134");
+        wait for delay_time;
+        assert matrix_output = expected_output report "Test 3 failed, output mismatch" severity error;
+
+        -- test 4:
+        matrix_input <= to_matrix(x"912C7676_3AF956DE_C0F2CE2E_A93E98DA");
+        expected_output := to_matrix(x"4D25CB1E_ECF71646_7658C73B_49BCC9E9");
+        wait for delay_time;
+        assert matrix_output = expected_output report "Test 4 failed, output mismatch" severity error;
+
+    end process;
 
 end bench;
