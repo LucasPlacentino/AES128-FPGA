@@ -1,6 +1,11 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+*.vhd linguist-language=VHDL
+*.vhdl linguist-language=VHDL
+*.scm linguist-generated=true
+*.sch linguist-generated=true
+
 #########################################################################################
 ##  Project    : Collect of various scripts for working with EDA-tools (ASIC/FPGA/etc) ##
 ##  Designer   : Dmitry Murzinov (kakstattakim@gmail.com)                              ##
